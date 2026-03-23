@@ -1,280 +1,283 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>For You</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    background: #0a0a1a;
-    color: #fff;
-    overflow-x: hidden;
-    min-height: 100vh;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For You</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+          background: #0a0a1a;
+          color: #fff;
+          overflow-x: hidden;
+          min-height: 100vh;
+        }
 
-  /* ===== 星空粒子背景 ===== */
-  #stars-canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 0;
-  }
+        /* ===== 星空粒子背景 ===== */
+        #stars-canvas {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          z-index: 0;
+        }
 
-  /* ===== 主容器 ===== */
-  .main {
-    position: relative;
-    z-index: 1;
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 60px 24px 80px;
-  }
+        /* ===== 主容器 ===== */
+        .main {
+          position: relative;
+          z-index: 1;
+          max-width: 420px;
+          margin: 0 auto;
+          padding: 60px 24px 80px;
+        }
 
-  /* ===== 爱心跳动 ===== */
-  .heart-wrapper {
-    text-align: center;
-    margin-bottom: 32px;
-    animation: floatIn 1.2s ease-out;
-  }
-  .heart {
-    display: inline-block;
-    font-size: 64px;
-    animation: heartbeat 1.2s infinite;
-    filter: drop-shadow(0 0 20px rgba(255, 80, 120, 0.6));
-  }
-  @keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    15% { transform: scale(1.15); }
-    30% { transform: scale(1); }
-    45% { transform: scale(1.1); }
-  }
+        /* ===== 爱心跳动 ===== */
+        .heart-wrapper {
+          text-align: center;
+          margin-bottom: 32px;
+          animation: floatIn 1.2s ease-out;
+        }
+        .heart {
+          display: inline-block;
+          font-size: 64px;
+          animation: heartbeat 1.2s infinite;
+          filter: drop-shadow(0 0 20px rgba(255, 80, 120, 0.6));
+        }
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          15% { transform: scale(1.15); }
+          30% { transform: scale(1); }
+          45% { transform: scale(1.1); }
+        }
 
-  /* ===== 标题区 ===== */
-  .title-section {
-    text-align: center;
-    margin-bottom: 48px;
-    animation: floatIn 1.4s ease-out;
-  }
-  .title {
-    font-size: 28px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #ff6b9d, #ffa8c5, #ff6b9d);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientShift 3s ease infinite;
-    margin-bottom: 12px;
-  }
-  .subtitle {
-    font-size: 14px;
-    color: rgba(255,255,255,0.5);
-    letter-spacing: 4px;
-  }
-  @keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
+        /* ===== 标题区 ===== */
+        .title-section {
+          text-align: center;
+          margin-bottom: 48px;
+          animation: floatIn 1.4s ease-out;
+        }
+        .title {
+          font-size: 28px;
+          font-weight: 700;
+          background: linear-gradient(135deg, #ff6b9d, #ffa8c5, #ff6b9d);
+          background-size: 200% 200%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: gradientShift 3s ease infinite;
+          margin-bottom: 12px;
+        }
+        .subtitle {
+          font-size: 14px;
+          color: rgba(255,255,255,0.5);
+          letter-spacing: 4px;
+        }
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
 
-  /* ===== 计时器卡片 ===== */
-  .counter-card {
-    background: linear-gradient(135deg, rgba(255,107,157,0.15), rgba(255,168,197,0.08));
-    border: 1px solid rgba(255,107,157,0.2);
-    border-radius: 20px;
-    padding: 28px 20px;
-    text-align: center;
-    margin-bottom: 40px;
-    backdrop-filter: blur(10px);
-    animation: floatIn 1.6s ease-out;
-  }
-  .counter-label {
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 16px;
-    letter-spacing: 2px;
-  }
-  .counter-nums {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .counter-item {
-    background: rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px 6px;
-    min-width: 60px;
-  }
-  .counter-num {
-    font-size: 32px;
-    font-weight: 700;
-    color: #ff6b9d;
-    line-height: 1.2;
-  }
-  .counter-unit {
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    margin-top: 4px;
-  }
-  .counter-date {
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-  }
+        /* ===== 计时器卡片 ===== */
+        .counter-card {
+          background: linear-gradient(135deg, rgba(255,107,157,0.15), rgba(255,168,197,0.08));
+          border: 1px solid rgba(255,107,157,0.2);
+          border-radius: 20px;
+          padding: 28px 20px;
+          text-align: center;
+          margin-bottom: 40px;
+          backdrop-filter: blur(10px);
+          animation: floatIn 1.6s ease-out;
+        }
+        .counter-label {
+          font-size: 13px;
+          color: rgba(255,255,255,0.6);
+          margin-bottom: 16px;
+          letter-spacing: 2px;
+        }
+        .counter-nums {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .counter-item {
+          background: rgba(255,255,255,0.06);
+          border-radius: 12px;
+          padding: 12px 6px;
+          min-width: 60px;
+        }
+        .counter-num {
+          font-size: 32px;
+          font-weight: 700;
+          color: #ff6b9d;
+          line-height: 1.2;
+        }
+        .counter-unit {
+          font-size: 11px;
+          color: rgba(255,255,255,0.4);
+          margin-top: 4px;
+        }
+        .counter-date {
+          font-size: 12px;
+          color: rgba(255,255,255,0.35);
+        }
 
-  /* ===== 照片墙 ===== */
-  .photo-section {
-    margin-bottom: 40px;
-    animation: floatIn 1.8s ease-out;
-  }
-  .section-title {
-    font-size: 16px;
-    color: rgba(255,255,255,0.7);
-    text-align: center;
-    margin-bottom: 20px;
-    letter-spacing: 3px;
-  }
-  .photo-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .photo-item {
-    position: relative;
-    border-radius: 14px;
-    overflow: hidden;
-    aspect-ratio: 1;
-    background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(100,100,200,0.1));
-    border: 1px solid rgba(255,255,255,0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .photo-item:hover, .photo-item:active {
-    transform: scale(1.03);
-    box-shadow: 0 8px 32px rgba(255,107,157,0.3);
-  }
-  .photo-item img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  .photo-placeholder {
-    width: 100%; height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255,255,255,0.25);
-    font-size: 12px;
-    gap: 8px;
-  }
-  .photo-placeholder::before {
-    content: '📷';
-    font-size: 28px;
-  }
-  .photo-item.span-2 {
-    grid-column: span 2;
-    aspect-ratio: 2/1;
-  }
+        /* ===== 照片墙 ===== */
+        .photo-section {
+          margin-bottom: 40px;
+          animation: floatIn 1.8s ease-out;
+        }
+        .section-title {
+          font-size: 16px;
+          color: rgba(255,255,255,0.7);
+          text-align: center;
+          margin-bottom: 20px;
+          letter-spacing: 3px;
+        }
+        .photo-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .photo-item {
+          position: relative;
+          border-radius: 14px;
+          overflow: hidden;
+          aspect-ratio: 9/16;
+          background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(100,100,200,0.1));
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .photo-item:hover, .photo-item:active {
+          transform: scale(1.03);
+          box-shadow: 0 8px 32px rgba(255,107,157,0.3);
+        }
+        .photo-item img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+        }
+        .photo-placeholder {
+          width: 100%; height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: rgba(255,255,255,0.25);
+          font-size: 12px;
+          gap: 8px;
+        }
+        .photo-placeholder::before {
+          content: '📷';
+          font-size: 28px;
+        }
+        .photo-item.span-2 {
+          grid-column: span 2;
+          aspect-ratio: 2/1;
+        }
+        .photo-item.square {
+          aspect-ratio: 1;
+        }
 
-  /* ===== 打字机文字 ===== */
-  .message-section {
-    margin-bottom: 40px;
-  }
-  .message-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 28px 22px;
-    line-height: 2;
-    font-size: 15px;
-    color: rgba(255,255,255,0.8);
-    min-height: 180px;
-  }
-  .typewriter-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 18px;
-    background: #ff6b9d;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink 0.8s infinite;
-  }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
+        /* ===== 打字机文字 ===== */
+        .message-section {
+          margin-bottom: 40px;
+        }
+        .message-card {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          padding: 28px 22px;
+          line-height: 2;
+          font-size: 15px;
+          color: rgba(255,255,255,0.8);
+          min-height: 180px;
+        }
+        .typewriter-cursor {
+          display: inline-block;
+          width: 2px;
+          height: 18px;
+          background: #ff6b9d;
+          margin-left: 2px;
+          vertical-align: text-bottom;
+          animation: blink 0.8s infinite;
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
 
-  /* ===== 烟花按钮 ===== */
-  .firework-btn-wrapper {
-    text-align: center;
-    margin-bottom: 40px;
-    animation: floatIn 2.2s ease-out;
-  }
-  .firework-btn {
-    display: inline-block;
-    padding: 14px 40px;
-    background: linear-gradient(135deg, #ff6b9d, #ee5a8a);
-    border: none;
-    border-radius: 50px;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(255,107,157,0.4);
-  }
-  .firework-btn:hover, .firework-btn:active {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(255,107,157,0.6);
-  }
+        /* ===== 烟花按钮 ===== */
+        .firework-btn-wrapper {
+          text-align: center;
+          margin-bottom: 40px;
+          animation: floatIn 2.2s ease-out;
+        }
+        .firework-btn {
+          display: inline-block;
+          padding: 14px 40px;
+          background: linear-gradient(135deg, #ff6b9d, #ee5a8a);
+          border: none;
+          border-radius: 50px;
+          color: #fff;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: 2px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 20px rgba(255,107,157,0.4);
+        }
+        .firework-btn:hover, .firework-btn:active {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(255,107,157,0.6);
+        }
 
-  /* ===== 烟花画布 ===== */
-  #firework-canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 100;
-    pointer-events: none;
-    display: none;
-  }
+        /* ===== 烟花画布 ===== */
+        #firework-canvas {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          z-index: 100;
+          pointer-events: none;
+          display: none;
+        }
 
-  /* ===== 漂浮爱心 ===== */
-  .floating-hearts {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .f-heart {
-    position: absolute;
-    bottom: -30px;
-    font-size: 18px;
-    opacity: 0;
-    animation: floatUp linear forwards;
-  }
-  @keyframes floatUp {
-    0% { opacity: 0; transform: translateY(0) rotate(0deg) scale(0.5); }
-    10% { opacity: 0.7; }
-    90% { opacity: 0.3; }
-    100% { opacity: 0; transform: translateY(-110vh) rotate(720deg) scale(1.2); }
-  }
+        /* ===== 漂浮爱心 ===== */
+        .floating-hearts {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          z-index: 0;
+          pointer-events: none;
+          overflow: hidden;
+        }
+        .f-heart {
+          position: absolute;
+          bottom: -30px;
+          font-size: 18px;
+          opacity: 0;
+          animation: floatUp linear forwards;
+        }
+        @keyframes floatUp {
+          0% { opacity: 0; transform: translateY(0) rotate(0deg) scale(0.5); }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.3; }
+          100% { opacity: 0; transform: translateY(-110vh) rotate(720deg) scale(1.2); }
+        }
 
-  /* ===== 底部签名 ===== */
-  .footer {
-    text-align: center;
-    padding: 20px 0;
-    color: rgba(255,255,255,0.2);
-    font-size: 12px;
-    letter-spacing: 2px;
-  }
+        /* ===== 底部签名 ===== */
+        .footer {
+          text-align: center;
+          padding: 20px 0;
+          color: rgba(255,255,255,0.2);
+          font-size: 12px;
+          letter-spacing: 2px;
+        }
 
-  /* ===== 通用动画 ===== */
-  @keyframes floatIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+        /* ===== 通用动画 ===== */
+        @keyframes floatIn {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
@@ -290,323 +293,344 @@
 <!-- 主内容 -->
 <div class="main">
 
-  <!-- 爱心 -->
-  <div class="heart-wrapper">
-    <span class="heart">❤️</span>
-  </div>
-
-  <!-- 标题 -->
-  <div class="title-section">
-    <!-- ✏️ 修改这里的标题和副标题 -->
-    <div class="title">我喜欢你</div>
-    <div class="subtitle">—— FOR MY LOVE ——</div>
-  </div>
-
-  <!-- 在一起计时器 -->
-  <div class="counter-card">
-    <div class="counter-label">我们已经在一起</div>
-    <div class="counter-nums">
-      <div class="counter-item">
-        <div class="counter-num" id="counter-days">0</div>
-        <div class="counter-unit">天</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num" id="counter-hours">0</div>
-        <div class="counter-unit">时</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num" id="counter-mins">0</div>
-        <div class="counter-unit">分</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num" id="counter-secs">0</div>
-        <div class="counter-unit">秒</div>
-      </div>
+    <!-- 爱心 -->
+    <div class="heart-wrapper">
+        <span class="heart">❤️</span>
     </div>
-    <!-- ✏️ 修改这里的在一起日期 -->
-    <div class="counter-date">since 2026-02-24</div>
-  </div>
 
-  <!-- 照片墙 -->
-  <div class="photo-section">
-    <div class="section-title">· 我们的回忆 ·</div>
-    <div class="photo-grid">
-      <!-- ✏️ 把 <div class="photo-placeholder">替换照片</div> 换成 <img src="你的照片.jpg"> -->
-      <div class="photo-item">
-        <div class="photo-placeholder">替换照片</div>
-      </div>
-      <div class="photo-item">
-        <div class="photo-placeholder">替换照片</div>
-      </div>
-      <div class="photo-item">
-        <div class="photo-placeholder">替换照片</div>
-      </div>
-      <div class="photo-item">
-        <div class="photo-placeholder">替换照片</div>
-      </div>
-      <div class="photo-item span-2">
-        <div class="photo-placeholder">替换一张横版合照</div>
-      </div>
+    <!-- 标题 -->
+    <div class="title-section">
+        <!-- ✏️ 修改这里的标题和副标题 -->
+        <div class="title">瑶瑶，我爱你</div>
+        <div class="subtitle">—— IS FOR YOU ——</div>
     </div>
-  </div>
 
-  <!-- 表白文字（打字机效果） -->
-  <div class="message-section">
-    <div class="section-title">· 想对你说 ·</div>
-    <div class="message-card">
-      <span id="typewriter-text"></span>
-      <span class="typewriter-cursor"></span>
+    <!-- 在一起计时器 -->
+    <div class="counter-card">
+        <div class="counter-label">我们已经在一起</div>
+        <div class="counter-nums">
+            <div class="counter-item">
+                <div class="counter-num" id="counter-days">0</div>
+                <div class="counter-unit">天</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-num" id="counter-hours">0</div>
+                <div class="counter-unit">时</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-num" id="counter-mins">0</div>
+                <div class="counter-unit">分</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-num" id="counter-secs">0</div>
+                <div class="counter-unit">秒</div>
+            </div>
+        </div>
+        <!-- ✏️ 修改这里的在一起日期 -->
+        <div class="counter-date">since 2026-02-24</div>
     </div>
-  </div>
 
-  <!-- 放烟花按钮 -->
-  <div class="firework-btn-wrapper">
-    <button class="firework-btn" id="firework-btn">🎆 为你放一场烟花</button>
-  </div>
+    <!-- 照片墙 -->
+    <div class="photo-section">
+        <div class="section-title">· 我们的留念，未完待续~ ·</div>
+        <div class="photo-grid">
+            <div class="photo-item">
+                <img src="图1.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item">
+                <img src="图2.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item">
+                <img src="图3.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item">
+                <img src="图4.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item">
+                <img src="图5.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item">
+                <img src="图6.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item square">
+                <img src="情1.png" alt="我们的纪念">
+            </div>
+            <div class="photo-item square">
+                <img src="情2.png" alt="我们的纪念">
+            </div>
+        </div>
+    </div>
 
-  <!-- 底部 -->
-  <div class="footer">♡ forever & always ♡</div>
+    <!-- 表白文字（打字机效果） -->
+    <div class="message-section">
+        <div class="section-title">· 想对你说 ·</div>
+        <div class="message-card">
+            <span id="typewriter-text"></span>
+            <span class="typewriter-cursor"></span>
+        </div>
+    </div>
+
+    <!-- 放烟花按钮 -->
+    <div class="firework-btn-wrapper">
+        <button class="firework-btn" id="firework-btn">🎆 为你放一场烟花</button>
+    </div>
+
+    <!-- 底部 -->
+    <div class="footer">♡ forever & always ♡</div>
 
 </div>
 
 <script>
-/* =============================
-   ✏️ 配置区域 - 修改这里的内容
-   ============================= */
+    /* =============================
+       ✏️ 配置区域 - 修改这里的内容
+       ============================= */
 
-// 在一起的日期（格式：YYYY-MM-DD）
-const TOGETHER_DATE = '2026-02-24';
+    // 在一起的日期（格式：YYYY-MM-DD）
+    const TOGETHER_DATE = '2026-02-24';
 
-// 打字机要显示的文字
-const LOVE_MESSAGE = `遇见你之前，我没想过会有一个人，让我愿意把所有的耐心和温柔都给她。
+    // 打字机要显示的文字
+    const LOVE_MESSAGE = `
+遇见你之前，日子寻常平淡；
 
-谢谢你出现在我的生命里，让平凡的日子都变得闪闪发光。
+遇见你之后，万物皆有温柔。
 
-往后余生，风雪是你，平淡是你，清贫是你，荣华是你，心底温柔是你，目光所至，也是你。
+谢谢你来到我的世界，让普通的时光，都变得温柔明亮。
 
-我爱你 ❤️`;
+你心怀热爱，自有光芒，
 
+指尖灵巧，聪慧通透，
 
-/* ===========================
-   以下是功能代码，不需要修改
-   =========================== */
+成熟稳重，温柔体谅，亦有向上的光芒。
 
-// ---- 星空背景 ----
-(function initStars() {
-  const canvas = document.getElementById('stars-canvas');
-  const ctx = canvas.getContext('2d');
-  let stars = [];
-  let shootingStars = [];
+是你，让我心安，让我向往。
 
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+愿往后岁岁年年，朝暮相伴，四季与共，
 
-  // 生成星星
-  for (let i = 0; i < 200; i++) {
-    stars.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.5 + 0.3,
-      alpha: Math.random(),
-      dAlpha: (Math.random() - 0.5) * 0.015
-    });
-  }
+心有安处，目有归人。
 
-  // 流星
-  function newShootingStar() {
-    return {
-      x: Math.random() * canvas.width * 0.7,
-      y: Math.random() * canvas.height * 0.4,
-      len: Math.random() * 60 + 40,
-      speed: Math.random() * 6 + 4,
-      alpha: 1
-    };
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 绘制星星
-    stars.forEach(s => {
-      s.alpha += s.dAlpha;
-      if (s.alpha > 1 || s.alpha < 0.1) s.dAlpha *= -1;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
-      ctx.fill();
-    });
-
-    // 流星
-    if (Math.random() < 0.005) shootingStars.push(newShootingStar());
-    shootingStars.forEach((ss, i) => {
-      ctx.beginPath();
-      ctx.moveTo(ss.x, ss.y);
-      ctx.lineTo(ss.x - ss.len * 0.7, ss.y - ss.len * 0.3);
-      ctx.strokeStyle = `rgba(255,255,255,${ss.alpha})`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ss.x += ss.speed;
-      ss.y += ss.speed * 0.4;
-      ss.alpha -= 0.015;
-      if (ss.alpha <= 0) shootingStars.splice(i, 1);
-    });
-
-    requestAnimationFrame(animate);
-  }
-  animate();
-})();
+我爱你，认真且坚定❤️`;
 
 
-// ---- 在一起计时器 ----
-(function initCounter() {
-  const start = new Date(TOGETHER_DATE).getTime();
-  function update() {
-    const diff = Date.now() - start;
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('counter-days').textContent = d;
-    document.getElementById('counter-hours').textContent = h;
-    document.getElementById('counter-mins').textContent = String(m).padStart(2, '0');
-    document.getElementById('counter-secs').textContent = String(s).padStart(2, '0');
-  }
-  update();
-  setInterval(update, 1000);
-})();
+    /* ===========================
+       以下是功能代码，不需要修改
+       =========================== */
 
+    // ---- 星空背景 ----
+    (function initStars() {
+      const canvas = document.getElementById('stars-canvas');
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      let shootingStars = [];
 
-// ---- 打字机效果 ----
-(function initTypewriter() {
-  const el = document.getElementById('typewriter-text');
-  let i = 0;
-  function type() {
-    if (i < LOVE_MESSAGE.length) {
-      const ch = LOVE_MESSAGE[i];
-      if (ch === '\n') {
-        el.innerHTML += '<br>';
-      } else {
-        el.innerHTML += ch;
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
       }
-      i++;
-      const delay = ch === '\n' ? 400 : (ch === '，' || ch === '。' || ch === '！' || ch === '？') ? 200 : 60;
-      setTimeout(type, delay);
-    }
-  }
-  // 页面滚动到消息区域时触发
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-      type();
-      observer.disconnect();
-    }
-  }, { threshold: 0.3 });
-  observer.observe(document.querySelector('.message-section'));
-})();
+      resize();
+      window.addEventListener('resize', resize);
 
+      // 生成星星
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.5 + 0.3,
+          alpha: Math.random(),
+          dAlpha: (Math.random() - 0.5) * 0.015
+        });
+      }
 
-// ---- 漂浮爱心 ----
-(function initFloatingHearts() {
-  const container = document.getElementById('floating-hearts');
-  const hearts = ['❤️', '💕', '💗', '💖', '🩷', '♥'];
-  function spawn() {
-    const el = document.createElement('span');
-    el.className = 'f-heart';
-    el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-    el.style.left = Math.random() * 100 + '%';
-    el.style.fontSize = (Math.random() * 14 + 12) + 'px';
-    el.style.animationDuration = (Math.random() * 6 + 8) + 's';
-    container.appendChild(el);
-    el.addEventListener('animationend', () => el.remove());
-  }
-  setInterval(spawn, 2000);
-})();
+      // 流星
+      function newShootingStar() {
+        return {
+          x: Math.random() * canvas.width * 0.7,
+          y: Math.random() * canvas.height * 0.4,
+          len: Math.random() * 60 + 40,
+          speed: Math.random() * 6 + 4,
+          alpha: 1
+        };
+      }
 
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// ---- 烟花效果 ----
-(function initFireworks() {
-  const canvas = document.getElementById('firework-canvas');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-  let animating = false;
-  let animationId = null;
+        // 绘制星星
+        stars.forEach(s => {
+          s.alpha += s.dAlpha;
+          if (s.alpha > 1 || s.alpha < 0.1) s.dAlpha *= -1;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+          ctx.fill();
+        });
 
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+        // 流星
+        if (Math.random() < 0.005) shootingStars.push(newShootingStar());
+        shootingStars.forEach((ss, i) => {
+          ctx.beginPath();
+          ctx.moveTo(ss.x, ss.y);
+          ctx.lineTo(ss.x - ss.len * 0.7, ss.y - ss.len * 0.3);
+          ctx.strokeStyle = `rgba(255,255,255,${ss.alpha})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ss.x += ss.speed;
+          ss.y += ss.speed * 0.4;
+          ss.alpha -= 0.015;
+          if (ss.alpha <= 0) shootingStars.splice(i, 1);
+        });
 
-  function hslToRgb(h, s, l) {
-    s /= 100; l /= 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1); };
-    return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
-  }
-
-  function explode(x, y) {
-    const hue = Math.random() * 60 + 330; // 粉红-红色系
-    const count = 80 + Math.floor(Math.random() * 40);
-    for (let i = 0; i < count; i++) {
-      const angle = (Math.PI * 2 / count) * i + Math.random() * 0.2;
-      const speed = Math.random() * 4 + 2;
-      const [r, g, b] = hslToRgb(hue + Math.random() * 40, 80 + Math.random() * 20, 55 + Math.random() * 15);
-      particles.push({
-        x, y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        alpha: 1,
-        r, g, b,
-        decay: 0.008 + Math.random() * 0.008,
-        size: Math.random() * 2.5 + 1
-      });
-    }
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach((p, i) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.04; // 重力
-      p.alpha -= p.decay;
-      if (p.alpha <= 0) { particles.splice(i, 1); return; }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${p.alpha})`;
-      ctx.fill();
-    });
-
-    if (particles.length > 0) {
-      animationId = requestAnimationFrame(animate);
-    } else {
-      animating = false;
-      canvas.style.display = 'none';
-    }
-  }
-
-  document.getElementById('firework-btn').addEventListener('click', function() {
-    canvas.style.display = 'block';
-    // 连续放多个烟花
-    let count = 0;
-    const interval = setInterval(() => {
-      const x = canvas.width * (0.2 + Math.random() * 0.6);
-      const y = canvas.height * (0.15 + Math.random() * 0.35);
-      explode(x, y);
-      count++;
-      if (count >= 8) clearInterval(interval);
-    }, 350);
-
-    if (!animating) {
-      animating = true;
+        requestAnimationFrame(animate);
+      }
       animate();
-    }
-  });
-})();
+    })();
+
+
+    // ---- 在一起计时器 ----
+    (function initCounter() {
+      const start = new Date(TOGETHER_DATE).getTime();
+      function update() {
+        const diff = Date.now() - start;
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('counter-days').textContent = d;
+        document.getElementById('counter-hours').textContent = h;
+        document.getElementById('counter-mins').textContent = String(m).padStart(2, '0');
+        document.getElementById('counter-secs').textContent = String(s).padStart(2, '0');
+      }
+      update();
+      setInterval(update, 1000);
+    })();
+
+
+    // ---- 打字机效果 ----
+    (function initTypewriter() {
+      const el = document.getElementById('typewriter-text');
+      let i = 0;
+      function type() {
+        if (i < LOVE_MESSAGE.length) {
+          const ch = LOVE_MESSAGE[i];
+          if (ch === '\n') {
+            el.innerHTML += '<br>';
+          } else {
+            el.innerHTML += ch;
+          }
+          i++;
+          const delay = ch === '\n' ? 400 : (ch === '，' || ch === '。' || ch === '！' || ch === '？') ? 200 : 60;
+          setTimeout(type, delay);
+        }
+      }
+      // 页面滚动到消息区域时触发
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          type();
+          observer.disconnect();
+        }
+      }, { threshold: 0.3 });
+      observer.observe(document.querySelector('.message-section'));
+    })();
+
+
+    // ---- 漂浮爱心 ----
+    (function initFloatingHearts() {
+      const container = document.getElementById('floating-hearts');
+      const hearts = ['❤️', '💕', '💗', '💖', '🩷', '♥'];
+      function spawn() {
+        const el = document.createElement('span');
+        el.className = 'f-heart';
+        el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        el.style.left = Math.random() * 100 + '%';
+        el.style.fontSize = (Math.random() * 14 + 12) + 'px';
+        el.style.animationDuration = (Math.random() * 6 + 8) + 's';
+        container.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+      setInterval(spawn, 2000);
+    })();
+
+
+    // ---- 烟花效果 ----
+    (function initFireworks() {
+      const canvas = document.getElementById('firework-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animating = false;
+      let animationId = null;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function hslToRgb(h, s, l) {
+        s /= 100; l /= 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1); };
+        return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+      }
+
+      function explode(x, y) {
+        const hue = Math.random() * 60 + 330; // 粉红-红色系
+        const count = 80 + Math.floor(Math.random() * 40);
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 / count) * i + Math.random() * 0.2;
+          const speed = Math.random() * 4 + 2;
+          const [r, g, b] = hslToRgb(hue + Math.random() * 40, 80 + Math.random() * 20, 55 + Math.random() * 15);
+          particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            alpha: 1,
+            r, g, b,
+            decay: 0.008 + Math.random() * 0.008,
+            size: Math.random() * 2.5 + 1
+          });
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.04; // 重力
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) { particles.splice(i, 1); return; }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${p.alpha})`;
+          ctx.fill();
+        });
+
+        if (particles.length > 0) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          animating = false;
+          canvas.style.display = 'none';
+        }
+      }
+
+      document.getElementById('firework-btn').addEventListener('click', function() {
+        canvas.style.display = 'block';
+        // 连续放多个烟花
+        let count = 0;
+        const interval = setInterval(() => {
+          const x = canvas.width * (0.2 + Math.random() * 0.6);
+          const y = canvas.height * (0.15 + Math.random() * 0.35);
+          explode(x, y);
+          count++;
+          if (count >= 8) clearInterval(interval);
+        }, 350);
+
+        if (!animating) {
+          animating = true;
+          animate();
+        }
+      });
+    })();
 </script>
 </body>
 </html>

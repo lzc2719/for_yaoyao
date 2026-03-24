@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>For You</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #0a0a1a;
+      color: #fff;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* ===== 主题色背景光晕 ===== */
+    .theme-glow {
+      position: fixed;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, var(--c1) 0%, transparent 50%);
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.08; transform: translateX(-50%) scale(1); }
+      50% { opacity: 0.12; transform: translateX(-50%) scale(1.05); }
+    }
+
+    /* ===== 顶部主题色渐变条 ===== */
+    .theme-bar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--c1), var(--c2), var(--c1));
+      background-size: 200% 100%;
+      z-index: 1000;
+      animation: barShimmer 3s linear infinite;
+    }
+    @keyframes barShimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* ===== 交互画布（星空+点击粒子） ===== */
+    #stars-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ===== 主容器 ===== */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    /* ===== 爱心跳动（CSS心形） ===== */
+    .heart-wrapper { text-align: center; margin-bottom: 32px; }
+    .heart {
+      display: inline-block;
+      position: relative;
+      width: 64px; height: 58px;
+      animation: heartbeat 1.2s infinite;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 32px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      border-radius: 32px 32px 0 0;
+      box-shadow: 0 0 30px var(--glow);
+    }
+    .heart::before {
+      left: 32px;
+      transform: rotate(-45deg);
+      transform-origin: 0 100%;
+    }
+    .heart::after {
+      left: 0;
+      transform: rotate(45deg);
+      transform-origin: 100% 100%;
+    }
+    .heart:active { transform: scale(1.4); }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.15); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.1); }
+    }
+
+    /* ===== 标题区 ===== */
+    .title-section { text-align: center; margin-bottom: 48px; }
+    .title {
+      font-size: 28px; font-weight: 700;
+      background: linear-gradient(135deg, var(--c1), var(--c2), var(--c1));
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientShift 3s ease infinite;
+      margin-bottom: 12px;
+    }
+    .subtitle { font-size: 14px; color: rgba(255,255,255,0.5); letter-spacing: 4px; }
+    .random-quote {
+      margin-top: 16px; font-size: 13px;
+      color: rgba(255,255,255,0.45); font-style: italic;
+      letter-spacing: 1px; min-height: 20px;
+      transition: opacity 0.5s;
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* ===== 计时器卡片 ===== */
+    .counter-card {
+      background: linear-gradient(135deg, rgba(var(--cr1),0.15), rgba(var(--cr2),0.08));
+      border: 1px solid rgba(var(--cr1),0.2);
+      border-radius: 20px;
+      padding: 28px 20px; text-align: center;
+      margin-bottom: 40px;
+      backdrop-filter: blur(10px);
+    }
+    .counter-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 16px; letter-spacing: 2px; }
+    .counter-nums { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .counter-item { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 6px; min-width: 60px; }
+    .counter-num { font-size: 32px; font-weight: 700; color: var(--c1); line-height: 1.2; }
+    .counter-unit { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .counter-date { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+    /* ===== 照片墙 ===== */
+    .photo-section { margin-bottom: 40px; }
+    .section-title {
+      font-size: 16px; color: rgba(255,255,255,0.7);
+      text-align: center; margin-bottom: 20px; letter-spacing: 3px;
+    }
+    .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .photo-item {
+      position: relative; border-radius: 14px; overflow: hidden;
+      aspect-ratio: 1; background: linear-gradient(135deg, rgba(var(--cr1),0.1), rgba(100,100,200,0.1));
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .photo-item:hover, .photo-item:active {
+      transform: scale(1.03);
+      box-shadow: 0 8px 32px rgba(var(--cr1),0.3);
+    }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ===== 打字机文字 ===== */
+    .message-section { margin-bottom: 40px; }
+    .message-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 28px 22px;
+      line-height: 2; font-size: 15px; color: rgba(255,255,255,0.8);
+      min-height: 180px;
+    }
+    .typewriter-cursor {
+      display: inline-block; width: 2px; height: 18px;
+      background: var(--c1); margin-left: 2px;
+      vertical-align: text-bottom; animation: blink 0.8s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ===== 互动按钮组 ===== */
+    .action-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 40px;
+    }
+    .action-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px 12px; gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; color: #fff;
+      font-size: 13px; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .action-btn:hover, .action-btn:active {
+      background: rgba(var(--cr1),0.15);
+      border-color: rgba(var(--cr1),0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(var(--cr1),0.2);
+    }
+    .action-btn .icon { font-size: 28px; }
+    .action-btn span { letter-spacing: 1px; }
+
+    /* ===== 爱情抽签 ===== */
+    .fortune-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .fortune-overlay.show { display: flex; }
+    .fortune-card {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(var(--cr1),0.3);
+      border-radius: 24px; padding: 40px 32px;
+      max-width: 320px; text-align: center;
+      animation: cardIn 0.5s ease-out;
+      position: relative;
+    }
+    .fortune-card .label { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 4px; margin-bottom: 20px; }
+    .fortune-card .content { font-size: 18px; line-height: 1.8; color: rgba(255,255,255,0.9); margin-bottom: 24px; }
+    .fortune-card .tag {
+      display: inline-block; padding: 4px 16px;
+      background: rgba(var(--cr1),0.2); border-radius: 20px;
+      font-size: 12px; color: var(--c1);
+    }
+    .fortune-card .close-btn {
+      position: absolute; top: 12px; right: 16px;
+      background: none; border: none; color: rgba(255,255,255,0.3);
+      font-size: 20px; cursor: pointer;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: scale(0.8) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ===== 记忆翻牌游戏 ===== */
+    .game-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); flex-direction: column;
+    }
+    .game-overlay.show { display: flex; }
+    .game-header {
+      color: rgba(255,255,255,0.8); margin-bottom: 20px;
+      text-align: center;
+    }
+    .game-header h3 { font-size: 20px; margin-bottom: 8px; }
+    .game-stats { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .game-board {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; max-width: 300px;
+    }
+    .game-card-cell {
+      width: 68px; height: 68px; perspective: 600px; cursor: pointer;
+    }
+    .game-card-inner {
+      width: 100%; height: 100%; position: relative;
+      transition: transform 0.5s; transform-style: preserve-3d;
+    }
+    .game-card-cell.flipped .game-card-inner { transform: rotateY(180deg); }
+    .game-card-cell.matched .game-card-inner { transform: rotateY(180deg); }
+    .game-card-cell.matched { opacity: 0.7; pointer-events: none; }
+    .game-card-front, .game-card-back {
+      position: absolute; width: 100%; height: 100%;
+      backface-visibility: hidden; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .game-card-front {
+      background: linear-gradient(135deg, rgba(var(--cr1),0.3), rgba(var(--cr2),0.2));
+      border: 1px solid rgba(var(--cr1),0.3);
+      color: var(--c1); font-size: 20px;
+    }
+    .game-card-back { background: rgba(255,255,255,0.06); transform: rotateY(180deg); }
+    .game-close {
+      margin-top: 20px; padding: 10px 32px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px; color: #fff; cursor: pointer; font-size: 13px;
+    }
+    .game-win {
+      display: none; text-align: center;
+      animation: cardIn 0.5s ease-out;
+    }
+    .game-win.show { display: block; }
+    .game-win h3 { font-size: 24px; margin-bottom: 8px; }
+    .game-win p { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+    /* ===== 漂流瓶 ===== */
+    .bottle-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .bottle-overlay.show { display: flex; }
+    .bottle-panel {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(var(--cr1),0.3);
+      border-radius: 24px; padding: 32px 24px;
+      max-width: 340px; width: 90%;
+      animation: cardIn 0.5s ease-out;
+    }
+    .bottle-panel h3 { text-align: center; font-size: 18px; margin-bottom: 6px; }
+    .bottle-panel .desc { text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 20px; }
+    .bottle-textarea {
+      width: 100%; min-height: 100px; padding: 14px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; color: #fff; font-size: 14px;
+      resize: none; outline: none; font-family: inherit; line-height: 1.6;
+    }
+    .bottle-textarea::placeholder { color: rgba(255,255,255,0.25); }
+    .bottle-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .bottle-actions button {
+      flex: 1; padding: 10px; border-radius: 12px;
+      border: none; cursor: pointer; font-size: 13px;
+      transition: all 0.3s;
+    }
+    .bottle-send {
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      color: #fff; font-weight: 600;
+    }
+    .bottle-read {
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.15) !important;
+    }
+    .bottle-close {
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+    }
+    .bottle-history {
+      margin-top: 16px; max-height: 200px; overflow-y: auto;
+      display: none;
+    }
+    .bottle-history.show { display: block; }
+    .bottle-msg {
+      background: rgba(255,255,255,0.04); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6;
+    }
+    .bottle-msg .time { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 6px; }
+
+    /* ===== 烟花按钮 ===== */
+    .firework-btn-wrapper { text-align: center; margin-bottom: 40px; }
+    .firework-btn {
+      display: inline-block; padding: 14px 40px;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      border: none; border-radius: 50px;
+      color: #fff; font-size: 16px; font-weight: 600;
+      letter-spacing: 2px; cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(var(--cr1),0.4);
+    }
+    .firework-btn:hover, .firework-btn:active {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(var(--cr1),0.6);
+    }
+
+    /* ===== 烟花画布 ===== */
+    #firework-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 100; pointer-events: none; display: none;
+    }
+
+    /* ===== 漂浮爱心 ===== */
+    .floating-hearts {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .f-heart {
+      position: absolute; bottom: -30px; font-size: 18px; opacity: 0;
+      animation: floatUp linear forwards;
+    }
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(0) rotate(0deg) scale(0.5); }
+      10% { opacity: 0.7; }
+      90% { opacity: 0.3; }
+      100% { opacity: 0; transform: translateY(-110vh) rotate(720deg) scale(1.2); }
+    }
+
+    /* ===== 底部签名 ===== */
+    .footer { text-align: center; padding: 20px 0; color: rgba(255,255,255,0.2); font-size: 12px; letter-spacing: 2px; }
+
+    /* ===== 通用动画 ===== */
+    .fade-section { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+    .fade-section.visible { opacity: 1; transform: translateY(0); }
+
+    /* ===== 点击涟漪提示 ===== */
+    .tap-hint {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-size: 12px; color: rgba(255,255,255,0.25);
+      z-index: 1; letter-spacing: 2px;
+      animation: hintPulse 2s ease-in-out infinite;
+    }
+    @keyframes hintPulse {
+      0%, 100% { opacity: 0.25; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶部主题色渐变条 -->
+<div class="theme-bar"></div>
+
+<!-- 主题色背景光晕 -->
+<div class="theme-glow"></div>
+
+<!-- 星空+交互画布 -->
+<canvas id="stars-canvas"></canvas>
+
+<!-- 漂浮爱心 -->
+<div class="floating-hearts" id="floating-hearts"></div>
+
+<!-- 烟花画布 -->
+<canvas id="firework-canvas"></canvas>
+
+<!-- 点击提示 -->
+<div class="tap-hint" id="tap-hint">轻触星空，试试看</div>
+
+<!-- 主内容 -->
+<div class="main">
+
+  <!-- 爱心 -->
+  <div class="heart-wrapper fade-section">
+    <span class="heart" id="main-heart"></span>
+  </div>
+
+  <!-- 标题 -->
+  <div class="title-section fade-section">
+    <div class="title">瑶瑶，我爱你</div>
+    <div class="subtitle">—— IS FOR YOU ——</div>
+    <div class="random-quote" id="random-quote"></div>
+  </div>
+
+  <!-- 在一起计时器 -->
+  <div class="counter-card fade-section">
+    <div class="counter-label">我们已经在一起</div>
+    <div class="counter-nums">
+      <div class="counter-item">
+        <div class="counter-num" id="counter-days">0</div>
+        <div class="counter-unit">天</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="counter-hours">0</div>
+        <div class="counter-unit">时</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="counter-mins">0</div>
+        <div class="counter-unit">分</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="counter-secs">0</div>
+        <div class="counter-unit">秒</div>
+      </div>
+    </div>
+    <div class="counter-date">since 2026-02-24</div>
+  </div>
+
+  <!-- 照片墙 -->
+  <div class="photo-section fade-section">
+    <div class="section-title">· 我们的留念，未完待续~ ·</div>
+    <div class="photo-grid">
+      <div class="photo-item">
+        <img src="情1.png" alt="我们的纪念" loading="lazy">
+      </div>
+      <div class="photo-item">
+        <img src="情2.png" alt="我们的纪念" loading="lazy">
+      </div>
+    </div>
+  </div>
+
+  <!-- 互动功能区 -->
+  <div class="action-grid fade-section">
+    <button class="action-btn" id="btn-fortune">
+      <span class="icon">🔮</span>
+      <span>今日甜蜜签</span>
+    </button>
+    <button class="action-btn" id="btn-game">
+      <span class="icon">🎮</span>
+      <span>爱的记忆</span>
+    </button>
+    <button class="action-btn" id="btn-bottle">
+      <span class="icon">🍾</span>
+      <span>悄悄话漂流瓶</span>
+    </button>
+    <button class="action-btn" id="btn-dice">
+      <span class="icon">🎲</span>
+      <span>今天吃什么</span>
+    </button>
+  </div>
+
+  <!-- 表白文字（打字机效果） -->
+  <div class="message-section fade-section">
+    <div class="section-title">· 想对你说 ·</div>
+    <div class="message-card">
+      <span id="typewriter-text"></span>
+      <span class="typewriter-cursor"></span>
+    </div>
+  </div>
+
+  <!-- 放烟花按钮 -->
+  <div class="firework-btn-wrapper fade-section">
+    <button class="firework-btn" id="firework-btn">🎆 为你放一场烟花</button>
+  </div>
+
+  <div class="footer">♡ forever & always ♡</div>
+</div>
+
+<!-- 爱情抽签弹窗 -->
+<div class="fortune-overlay" id="fortune-overlay">
+  <div class="fortune-card">
+    <button class="close-btn" id="fortune-close">&times;</button>
+    <div class="label">—— 今日甜蜜签 ——</div>
+    <div class="content" id="fortune-content"></div>
+    <div class="tag" id="fortune-tag"></div>
+  </div>
+</div>
+
+<!-- 记忆翻牌游戏弹窗 -->
+<div class="game-overlay" id="game-overlay">
+  <div class="game-header">
+    <h3>💕 爱的记忆</h3>
+    <div class="game-stats">翻牌次数：<span id="game-moves">0</span></div>
+  </div>
+  <div class="game-board" id="game-board"></div>
+  <div class="game-win" id="game-win">
+    <h3>🎉 完美配对!</h3>
+    <p id="game-result"></p>
+  </div>
+  <button class="game-close" id="game-close">关闭</button>
+</div>
+
+<!-- 漂流瓶弹窗 -->
+<div class="bottle-overlay" id="bottle-overlay">
+  <div class="bottle-panel">
+    <h3>🍾 悄悄话漂流瓶</h3>
+    <div class="desc">写下想说的话，放入瓶中漂流~</div>
+    <textarea class="bottle-textarea" id="bottle-input" placeholder="写点什么悄悄话吧..."></textarea>
+    <div class="bottle-actions">
+      <button class="bottle-send" id="bottle-send">放入瓶中 🌊</button>
+      <button class="bottle-read" id="bottle-read">捞一个瓶子</button>
+    </div>
+    <div class="bottle-history" id="bottle-history"></div>
+    <div class="bottle-actions" style="margin-top:10px">
+      <button class="bottle-close" id="bottle-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 吃什么弹窗 -->
+<div class="fortune-overlay" id="dice-overlay">
+  <div class="fortune-card">
+    <button class="close-btn" id="dice-close">&times;</button>
+    <div class="label">—— 今天吃什么 ——</div>
+    <div class="content" id="dice-content" style="font-size:36px"></div>
+    <div class="tag" id="dice-tag"></div>
+  </div>
+</div>
+
+<script>
+  /* =============================
+     配置区域
+     ============================= */
+  const TOGETHER_DATE = '2026-02-24';
+
+  // 想对你说 - 文字片段库（每次随机显示一条）
+  const LOVE_MESSAGES = [
+    // 深情表白类
+    `遇见你之前，日子寻常平淡；\n\n遇见你之后，万物皆有温柔。\n\n谢谢你来到我的世界，让普通的时光，都变得温柔明亮。\n\n你心怀热爱，自有光芒，\n\n指尖灵巧，聪慧通透，\n\n成熟稳重，温柔体谅，亦有向上的光芒。\n\n是你，让我心安，让我向往。\n\n愿往后岁岁年年，朝暮相伴，四季与共，\n\n心有安处，目有归人。\n\n我爱你，认真且坚定。`,
+
+    `从遇见你的那一天起，\n\n我的人生就有了新的意义。\n\n你的笑容是我见过最美的风景，\n\n你的声音是我听过最动听的旋律。\n\n想和你一起，看遍世间繁华，\n\n也愿和你一起，度过柴米油盐。\n\n余生很长，我想牵着你的手，\n\n一步一步，慢慢走。`,
+
+    `如果可以，我想成为你生命里的一束光，\n\n在你疲惫的时候，给你温暖和力量。\n\n如果可以，我想成为你心灵的一个港湾，\n\n在你彷徨的时候，给你安心和依靠。\n\n你是我生命中最珍贵的礼物，\n\n我会用一生的时间去珍惜。`,
+
+    `我想了很久，要怎么告诉你我的心意。\n\n后来发现，遇见你之后，\n\n我的心，就没想过要给别人。\n\n你是我漫长岁月里最美的期待，\n\n是我平凡日子里最甜的惊喜。\n\n爱你这件事，我打算做一辈子。`,
+
+    `世间万物皆可期，\n\n唯独你的出现，让我相信了命中注定。\n\n你的温柔，是我不期而遇的惊喜，\n\n你的笑容，是我日日夜夜的动力。\n\n往后余生，风雪是你，平淡是你，\n\n清贫是你，荣华是你，心底温柔是你。`,
+
+    // 日常甜蜜类
+    `今天也想告诉你：\n\n我喜欢你，很喜欢很喜欢的那种。\n\n喜欢你说话时眼睛亮亮的样子，\n\n喜欢你认真时专注的神情，\n\n喜欢你不经意间露出的小表情。\n\n总之，关于你的一切，我都喜欢。`,
+
+    `你知道吗？\n\n每天睁开眼的第一件事，就是想你。\n\n想你在做什么，想你有没有好好吃饭，\n\n想今天能不能见到你。\n\n你就是我的清晨第一缕阳光，\n\n照亮了我的一整天。`,
+
+    `我想和你一起做的事情：\n\n一起吃早餐，一起散步，\n\n一起看电影，一起旅行，\n\n一起看日出日落，一起数星星。\n\n最重要的是，一起慢慢变老。\n\n你愿意陪我吗？`,
+
+    `今天的你，有没有想我？\n\n不管你有没有想我，\n\n我都要告诉你：我想你了。\n\n想念是一种很奇妙的感觉，\n\n让人觉得甜，又让人觉得难熬。\n\n见面的时候，我一定要紧紧抱住你。`,
+
+    `跟你在一起的每一天，\n\n都是我人生中最快乐的日子。\n\n即使是平淡的日常，\n\n因为有你在，也变得闪闪发光。\n\n谢谢你愿意陪在我身边，\n\n我会好好珍惜这份幸福。`,
+
+    // 思念类
+    `分开的时候，时间过得好慢。\n\n每一分钟都像被拉长了，\n\n因为心里装满了对你的思念。\n\n我想念你的声音，想念你的拥抱，\n\n想念和你在一起的所有时刻。\n\n快点见面吧，我想你了。`,
+
+    `你知道吗？\n\n每当夜深人静的时候，\n\n思念就会悄悄爬上心头。\n\n想念你的笑，想念你的好，\n\n想念和你有关的一切。\n\n愿这份思念，能飞到你的梦里。`,
+
+    `今天看到一句话：\n\n"想念是会呼吸的痛"\n\n以前不懂，现在终于明白了。\n\n因为想念你，\n\n连呼吸都带着你的味道。\n\n期待下一次见面，\n\n期待能紧紧拥抱你的那一刻。`,
+
+    `距离或许会让我们暂时分开，\n\n但思念会把我们的心连在一起。\n\n每天想你，已经成了我的习惯，\n\n就像呼吸一样自然。\n\n等我，很快就能见面了。`,
+
+    // 承诺类
+    `我想对你承诺：\n\n无论未来发生什么，\n\n我都会一直站在你身边。\n\n开心的时候陪你笑，\n\n难过的时候陪你哭，\n\n成功的时候为你骄傲，\n\n失败的时候给你拥抱。\n\n我永远都是你的后盾。`,
+
+    `以前觉得一辈子很长，\n\n但自从遇见你之后，\n\n我发现一辈子太短了。\n\n短到不够用来爱你，\n\n短到不够用来陪你。\n\n所以，我想把每一天都过成诗，\n\n每一刻都给你最好的自己。`,
+
+    `我可能不是最完美的人，\n\n但我会努力成为最适合你的人。\n\n我会学着更温柔，更体贴，\n\n学着理解你，包容你，支持你。\n\n我的未来里，一定有你。`,
+
+    `不管世界怎么变，\n\n我对你的心意永远不会变。\n\n你是我认真选择的，\n\n也是我愿意用一生守护的人。\n\n相信我，也相信我们。`,
+
+    // 温馨类
+    `想和你一起，\n\n在一个阳光很好的午后，\n\n窝在沙发上看书听歌，\n\n有一搭没一搭地聊天。\n\n不需要做什么特别的事，\n\n只要你在身边，就是最好的时光。`,
+
+    `你累的时候，\n\n记得告诉我，我会陪着你。\n\n你开心的时候，\n\n也记得告诉我，我想和你一起笑。\n\n不管是好的还是坏的，\n\n我都想和你一起分担。`,
+
+    `遇见你，是我最大的幸运。\n\n能被你爱，是我最大的幸福。\n\n每一天和你在一起，\n\n都是上天给我的礼物。\n\n我会好好珍惜，不会辜负这份爱。`,
+
+    `你是我心中最柔软的地方，\n\n想到你就会不自觉地笑。\n\n你的快乐就是我的快乐，\n\n你的忧伤也会让我心疼。\n\n愿我的存在，能给你带来温暖。`,
+
+    // 诗意类
+    `你是我眼中唯一的星光，\n\n照亮了我漫长的夜路。\n\n你是我心中唯一的春天，\n\n温暖了我的整个世界。\n\n遇见你，是我今生最美的意外。`,
+
+    `春水初生，春林初盛，\n\n春风十里，不如你。\n\n你是四季最美的风景，\n\n是我心中永恒的春天。\n\n愿与你共赏人间烟火，\n\n共度漫长岁月。`,
+
+    `山河远阔，人间烟火，\n\n无一是你，无一不是你。\n\n你是藏在云层里的月亮，\n\n也是我穷极一生寻找的宝藏。\n\n感谢命运让我遇见你。`,
+
+    `你是藏在我生命里的诗，\n\n每一句都关于温柔。\n\n你是落在我心尖上的雨，\n\n每一滴都是想念。\n\n愿余生，只为你写诗，只为你动心。`,
+
+    // 幽默可爱类
+    `今天也是超级超级喜欢你的一天！\n\n喜欢指数：⭐⭐⭐⭐⭐\n\n可爱指数：爆表\n\n想念指数：严重超标\n\n请尽快见面治疗！`,
+
+    `报告！你的小可爱正在想你！\n\n想念内容：全部的你\n\n想念程度：非常非常\n\n想念时长：24小时不间断\n\n请签收这份想念！`,
+
+    `你猜我现在在想什么？\n\n提示：和你有关\n\n再提示：超级喜欢你\n\n答案：以上都是！\n\n哈哈，被你发现了！`,
+
+    `今天的任务清单：\n\n1. 想你 ✓\n\n2. 超级想你 ✓\n\n3. 疯狂想你 ✓\n\n4. 准备明天继续想你 ✓\n\n全部完成！我真棒！`,
+
+    // 鼓励支持类
+    `无论你遇到什么困难，\n\n都请记得：你不是一个人。\n\n我会一直在你身边，\n\n支持你，鼓励你，陪伴你。\n\n你比想象中更勇敢，更坚强。\n\n我相信你，一直相信。`,
+
+    `如果你累了，就休息一下。\n\n如果觉得难过，就告诉我。\n\n你不需要一个人扛着所有，\n\n因为有我在。\n\n你的快乐和痛苦，我都愿意分享。`,
+
+    `今天的你也很棒！\n\n不管结果如何，\n\n你都付出了努力，\n\n我为你感到骄傲。\n\n明天继续加油，\n\n我会一直陪着你的。`,
+
+    // 简短有力类
+    `喜欢你，\n\n是一件特别幸福的事。\n\n余生，请多指教。`,
+
+    `你是我认定的人，\n\n这辈子都不会改变。\n\n我爱你。`,
+
+    `遇见你真好，\n\n愿余生都有你。\n\n每一天都在爱你。`,
+
+    `你的名字，\n\n是我读过最短的情诗。\n\n爱你，是我做过最对的事。`,
+
+    `想牵着你的手，\n\n走过春夏秋冬，\n\n直到白头。`,
+
+    `你是我的唯一，\n\n也是我的全部。\n\n永远爱你。`,
+  ];
+
+  // 随机选择一条消息
+  const LOVE_MESSAGE = LOVE_MESSAGES[Math.floor(Math.random() * LOVE_MESSAGES.length)];
+
+  // 甜蜜签语录库
+  const FORTUNES = [
+    { text: "今天的你们，\n比昨天更甜了一点点", tag: "上上签" },
+    { text: "有人在偷偷想你，\n而且想了一整天", tag: "甜蜜签" },
+    { text: "你们的默契指数\n今日高达 99%", tag: "心有灵犀" },
+    { text: "今天适合\n十指紧扣，慢慢走", tag: "浪漫签" },
+    { text: "晚风轻轻吹，\n而我在想你", tag: "思念签" },
+    { text: "你的笑，\n是我今天最好的收获", tag: "幸福签" },
+    { text: "爱你这件事，\n我打算一直做下去", tag: "承诺签" },
+    { text: "距离下一个拥抱，\n大概还有几个小时", tag: "期待签" },
+    { text: "你就是答案，\n不管问题是什么", tag: "唯一签" },
+    { text: "平凡日子里，\n因为有你才发光", tag: "温暖签" },
+    { text: "月亮偷偷告诉我，\n今晚有人更想你", tag: "月光签" },
+    { text: "我贪恋的人间烟火，\n不过是你", tag: "烟火签" },
+    { text: "陪你看过的风景，\n都变成了珍藏", tag: "回忆签" },
+    { text: "和你在一起的时候，\n时间过得真的好快", tag: "时光签" },
+    { text: "今天也是\n好喜欢你的一天", tag: "日常签" },
+    { text: "你的温柔是限量版，\n而我刚好拥有", tag: "幸运签" },
+    { text: "遇见你之后，\n我眼里的星星都亮了", tag: "星光签" },
+    { text: "你的每一条消息，\n都让我忍不住笑", tag: "心动签" },
+    { text: "你是我翻山越岭\n也要去见的人", tag: "奔赴签" },
+    { text: "我们的故事，\n未完待续...", tag: "连载签" },
+    { text: "今天也要\n努力爱你多一点", tag: "努力签" },
+    { text: "有你在的地方，\n就是家的方向", tag: "归属签" },
+    { text: "喜欢你这件事，\n是我做过最对的决定", tag: "无悔签" },
+    { text: "你的出现，\n让我开始期待明天", tag: "期待签" },
+    { text: "今天的你，\n格外好看呢", tag: "夸夸签" },
+    { text: "想念是一种习惯，\n而你已经成了我的习惯", tag: "习惯签" },
+    { text: "世界那么大，\n幸好我遇见的是你", tag: "缘分签" },
+    { text: "你是我写过\n最美的情诗", tag: "诗签" },
+    { text: "今天的运气：\n遇见你，已经用光了", tag: "满足签" },
+    { text: "我所有的温柔，\n都给你留着", tag: "专属签" },
+    { text: "你是我平淡岁月里\n最美的意外", tag: "惊喜签" },
+    { text: "爱你这件事，\n不需要练习，天生就会", tag: "天赋签" },
+    { text: "你说的每句话，\n我都认真听了", tag: "倾听签" },
+    { text: "今天适合\n窝在一起看电影", tag: "宅家签" },
+    { text: "你的存在，\n让普通的日子变得特别", tag: "特别签" },
+    { text: "今天桃花运：\n满分，对象就是你", tag: "桃花签" },
+    { text: "想和你一起\n虚度光阴", tag: "慵懒签" },
+    { text: "你是我戒不掉的\n小确幸", tag: "甜蜜签" },
+    { text: "今天的你，\n在我的心里跑了整天", tag: "运动签" },
+    { text: "喜欢你这件事，\n我一点都不想藏", tag: "表白签" },
+    { text: "你是我茫茫人海中\n唯一的例外", tag: "例外签" },
+    { text: "今天也要\n开开心心在一起", tag: "开心签" },
+    { text: "你的拥抱，\n是我的专属充电站", tag: "充电签" },
+    { text: "和你有关的每一件小事，\n都是大事", tag: "在乎签" },
+    { text: "今天的甜蜜值：\n已爆表", tag: "爆表签" },
+    { text: "你是我心中\n永远的第一名", tag: "冠军签" },
+    { text: "想和你一起\n慢慢变老", tag: "白头签" },
+    { text: "今天的任务：\n继续喜欢你", tag: "任务签" },
+    { text: "你的笑容，\n是我最喜欢的风景", tag: "风景签" },
+    { text: "你是我写过最长的情书，\n每一个字都关于你", tag: "情书签" },
+  ];
+
+  // 随机问候语
+  const GREETINGS = [
+    "每一天都是爱你的好日子",
+    "最好的总会在不经意间出现",
+    "你是我意料之外的幸运",
+    "世间美好与你环环相扣",
+    "余生请多指教",
+    "想和你一起慢慢变老",
+    "遇见你的那天，春风都在笑",
+    "你是暮色中的星辰，温柔了岁月",
+    "你的名字是我见过最短的情诗",
+    "喜欢你已经超过两分钟了，不能撤回",
+    "今天也要元气满满地爱你",
+    "你的出现，是我生命中最美的惊喜",
+    "你是我平淡日子里的小星星",
+    "有你在，连空气都是甜的",
+    "你是我心中的独家记忆",
+    "遇见你，是我最美丽的意外",
+    "你是我眼中最亮的星",
+    "想和你分享生活的每一个瞬间",
+    "你是我生命中最温柔的遇见",
+    "每一天因你而不同",
+    "你是我戒不掉的甜",
+    "你的温柔，我收藏了",
+    "爱你是我做过最正确的事",
+    "今天也在偷偷想你",
+    "你是我心底最柔软的存在",
+    "有你，真好",
+    "你是我最想留住的幸运",
+    "往后余生，都是你",
+    "你是我心中最美的风景",
+    "喜欢你，是一件很幸福的事",
+    "你是我漫漫人生路上的光",
+    "因为有你，未来值得期待",
+    "你是我最珍贵的礼物",
+    "今天也是爱你的一天",
+    "你是我最甜的心事",
+    "有你的日子，每天都在发光",
+    "你是我最想见的人",
+    "和你在一起，就是我想要的幸福",
+    "你是我心中永恒的春天",
+    "你是我生命中最美的诗篇",
+    "你是我藏在心底的温柔",
+    "今天也想抱抱你",
+    "你是我最想分享的人",
+    "爱你，是我每天的必修课",
+    "你是我最温暖的依靠",
+    "有你的世界，刚刚好",
+    "你是我最美的遇见",
+    "喜欢你，是我做过最对的事",
+    "你是我心中最亮的星",
+    "今天也要好好爱你",
+  ];
+
+  // 吃什么选项
+  const FOODS = [
+    { emoji: "🍜", name: "火锅", desc: "热辣滚烫，像我们的爱情" },
+    { emoji: "🍣", name: "日料", desc: "精致一下，你值得的" },
+    { emoji: "🍕", name: "披萨", desc: "芝士拉丝的幸福感" },
+    { emoji: "🍔", name: "汉堡炸鸡", desc: "快乐肥宅在一起" },
+    { emoji: "🥘", name: "中餐馆子", desc: "家的味道，温暖加倍" },
+    { emoji: "🍝", name: "意面/西餐", desc: "烛光晚餐安排上" },
+    { emoji: "🧋", name: "奶茶+小吃", desc: "随便吃点，重点是在一起" },
+    { emoji: "🍰", name: "甜品下午茶", desc: "甜甜的一天从这里开始" },
+    { emoji: "🥗", name: "轻食沙拉", desc: "今天吃得健康一点" },
+    { emoji: "🍲", name: "麻辣烫", desc: "想吃辣！加倍辣！" },
+    { emoji: "🫕", name: "烤肉", desc: "滋滋冒油的快乐" },
+    { emoji: "🍱", name: "自己做饭", desc: "一起下厨，幸福翻倍" },
+    { emoji: "🥟", name: "饺子/馄饨", desc: "一口一个的小确幸" },
+    { emoji: "🍜", name: "拉面/米粉", desc: "暖心暖胃的选择" },
+    { emoji: "🥪", name: "三明治/轻食", desc: "简单又满足" },
+    { emoji: "🌮", name: "墨西哥菜", desc: "来点不一样的风味" },
+    { emoji: "🍛", name: "咖喱饭", desc: "浓郁的异域风情" },
+    { emoji: "🥡", name: "外卖随便", desc: "懒得想，就这么定了" },
+    { emoji: "🦞", name: "小龙虾", desc: "剥虾给你吃，浪漫拉满" },
+    { emoji: "🍲", name: "串串香", desc: "一串一串的快乐" },
+    { emoji: "🥮", name: "港式茶餐厅", desc: "来个菠萝油和奶茶" },
+    { emoji: "🍜", name: "螺蛳粉", desc: "臭臭的但超好吃" },
+    { emoji: "🥘", name: "韩式料理", desc: "炸鸡配啤酒，绝配" },
+    { emoji: "🍲", name: "砂锅粥", desc: "暖暖的，很贴心" },
+    { emoji: "🥙", name: "卷饼/煎饼", desc: "路边摊也有好味道" },
+    { emoji: "🍜", name: "酸菜鱼", desc: "酸酸辣辣超开胃" },
+    { emoji: "🦀", name: "海鲜大餐", desc: "犒劳一下自己" },
+    { emoji: "🥩", name: "牛排", desc: "仪式感满满的约会" },
+    { emoji: "🍲", name: "椰子鸡", desc: "清甜养生又好吃" },
+    { emoji: "🍜", name: "酸辣粉", desc: "嗦粉的快乐你懂的" },
+    { emoji: "🥘", name: "泰式料理", desc: "冬阴功汤来一碗" },
+    { emoji: "🍲", name: "潮汕牛肉火锅", desc: "鲜嫩的牛肉入口即化" },
+    { emoji: "🥗", name: "水果沙拉", desc: "今天要清爽一点" },
+    { emoji: "🍜", name: "大盘鸡", desc: "分量足，吃着过瘾" },
+    { emoji: "🧇", name: "华夫饼/松饼", desc: "甜甜的早餐或下午茶" },
+    { emoji: "🍢", name: "关东煮", desc: "便利店的温暖" },
+    { emoji: "🥫", name: "泡面", desc: "加个蛋，简单快乐" },
+    { emoji: "🍲", name: "羊肉汤", desc: "滋补一下身体" },
+    { emoji: "🥮", name: "广式早茶", desc: "一盅两件，悠闲自在" },
+    { emoji: "🍜", name: "过桥米线", desc: "云南的味道" },
+  ];
+
+  // 记忆游戏 emoji
+  const GAME_EMOJIS = ['💕','🌹','🦋','💫','🌙','🍓','🎀','🐱'];
+
+  /* ===========================
+     随机主题色系统
+     =========================== */
+  const THEMES = [
+    { c1: '#ff6b9d', c2: '#ffa8c5', cr1: '255,107,157', cr2: '255,168,197', name: '樱花粉' },
+    { c1: '#f7797d', c2: '#FBD786', cr1: '247,121,125', cr2: '251,215,134', name: '落日橙' },
+    { c1: '#ee9ca7', c2: '#ffdde1', cr1: '238,156,167', cr2: '255,221,225', name: '蜜桃粉' },
+    { c1: '#fc5c7d', c2: '#6a82fb', cr1: '252,92,125', cr2: '106,130,251', name: '浪漫紫' },
+    { c1: '#f093fb', c2: '#f5576c', cr1: '240,147,251', cr2: '245,87,108', name: '霓虹粉' },
+    { c1: '#ff758c', c2: '#ff7eb3', cr1: '255,117,140', cr2: '255,126,179', name: '玫瑰红' },
+    { c1: '#a18cd1', c2: '#fbc2eb', cr1: '161,140,209', cr2: '251,194,235', name: '薰衣紫' },
+    { c1: '#ff9a9e', c2: '#fecfef', cr1: '255,154,158', cr2: '254,207,239', name: '甜美粉' },
+    { c1: '#f6d365', c2: '#fda085', cr1: '246,211,101', cr2: '253,160,133', name: '暖阳橙' },
+    { c1: '#84fab0', c2: '#8fd3f4', cr1: '132,250,176', cr2: '143,211,244', name: '清新绿' },
+    { c1: '#a1c4fd', c2: '#c2e9fb', cr1: '161,196,253', cr2: '194,233,251', name: '天空蓝' },
+    { c1: '#d299c2', c2: '#fef9d7', cr1: '210,153,194', cr2: '254,249,215', name: '淡紫金' },
+  ];
+
+  (function applyTheme() {
+    const t = THEMES[Math.floor(Math.random() * THEMES.length)];
+    const r = document.documentElement.style;
+    r.setProperty('--c1', t.c1);
+    r.setProperty('--c2', t.c2);
+    r.setProperty('--cr1', t.cr1);
+    r.setProperty('--cr2', t.cr2);
+    r.setProperty('--glow', t.c1 + '99');
+    console.log('当前主题:', t.name); // 调试用，可删除
+  })();
+
+  /* ===========================
+     随机问候
+     =========================== */
+  document.getElementById('random-quote').textContent =
+    '"' + GREETINGS[Math.floor(Math.random() * GREETINGS.length)] + '"';
+
+  /* ===========================
+     滚动入场动画
+     =========================== */
+  (function initScrollAnim() {
+    const sections = document.querySelectorAll('.fade-section');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          obs.unobserve(e.target); // 元素显示后停止观察
+        }
+      });
+    }, { threshold: 0.15 });
+    sections.forEach(s => obs.observe(s));
+  })();
+
+  /* ===========================
+     星空 + 点击粒子
+     =========================== */
+  (function initStars() {
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [], shootingStars = [], clickParticles = [];
+    const shootFreq = 0.003 + Math.random() * 0.008; // 随机流星频率
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // 随机星星数量
+    const starCount = 150 + Math.floor(Math.random() * 150);
+    for (let i = 0; i < starCount; i++) {
+      stars.push({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.3, alpha: Math.random(),
+        dAlpha: (Math.random() - 0.5) * 0.015
+      });
+    }
+
+    function newShootingStar() {
+      return {
+        x: Math.random() * canvas.width * 0.7, y: Math.random() * canvas.height * 0.4,
+        len: Math.random() * 60 + 40, speed: Math.random() * 6 + 4, alpha: 1
+      };
+    }
+
+    // 点击/触摸产生粒子
+    function spawnClickParticles(cx, cy) {
+      const hue = Math.random() * 60 + 330;
+      for (let i = 0; i < 20; i++) {
+        const angle = (Math.PI * 2 / 20) * i;
+        const speed = Math.random() * 3 + 1;
+        clickParticles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          alpha: 1, size: Math.random() * 2 + 1,
+          hue: hue + Math.random() * 30
+        });
+      }
+      // 隐藏提示
+      const hint = document.getElementById('tap-hint');
+      if (hint) hint.style.display = 'none';
+    }
+
+    canvas.addEventListener('click', (e) => spawnClickParticles(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      spawnClickParticles(touch.clientX, touch.clientY);
+    });
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      stars.forEach(s => {
+        s.alpha += s.dAlpha;
+        if (s.alpha > 1 || s.alpha < 0.1) s.dAlpha *= -1;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+        ctx.fill();
+      });
+
+      if (Math.random() < shootFreq) shootingStars.push(newShootingStar());
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const ss = shootingStars[i];
+        ctx.beginPath();
+        ctx.moveTo(ss.x, ss.y);
+        ctx.lineTo(ss.x - ss.len * 0.7, ss.y - ss.len * 0.3);
+        ctx.strokeStyle = `rgba(255,255,255,${ss.alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ss.x += ss.speed; ss.y += ss.speed * 0.4; ss.alpha -= 0.015;
+        if (ss.alpha <= 0) shootingStars.splice(i, 1);
+      }
+
+      // 点击粒子
+      for (let i = clickParticles.length - 1; i >= 0; i--) {
+        const p = clickParticles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.03; p.alpha -= 0.02;
+        if (p.alpha <= 0) { clickParticles.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        const [r, g, b] = hslToRgb(p.hue, 80, 60);
+        ctx.fillStyle = `rgba(${r},${g},${b},${p.alpha})`;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1); };
+    return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+  }
+
+  /* ===========================
+     在一起计时器
+     =========================== */
+  (function initCounter() {
+    const start = new Date(TOGETHER_DATE).getTime();
+    function update() {
+      const diff = Date.now() - start;
+      document.getElementById('counter-days').textContent = Math.floor(diff / 86400000);
+      document.getElementById('counter-hours').textContent = Math.floor((diff % 86400000) / 3600000);
+      document.getElementById('counter-mins').textContent = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      document.getElementById('counter-secs').textContent = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    }
+    update(); setInterval(update, 1000);
+  })();
+
+  /* ===========================
+     打字机效果
+     =========================== */
+  (function initTypewriter() {
+    const el = document.getElementById('typewriter-text');
+    let i = 0;
+    let started = false; // 防止重复触发
+    function type() {
+      if (i < LOVE_MESSAGE.length) {
+        const ch = LOVE_MESSAGE[i];
+        el.innerHTML += ch === '\n' ? '<br>' : ch;
+        i++;
+        setTimeout(type, ch === '\n' ? 400 : '，。！？'.includes(ch) ? 200 : 60);
+      }
+    }
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !started) {
+        started = true;
+        type();
+        obs.disconnect();
+      }
+    }, { threshold: 0.3 });
+    obs.observe(document.querySelector('.message-section'));
+  })();
+
+  /* ===========================
+     漂浮爱心（随机频率）
+     =========================== */
+  (function initFloatingHearts() {
+    const container = document.getElementById('floating-hearts');
+    const hearts = ['❤️','💕','💗','💖','🩷','♥'];
+    const interval = 1500 + Math.floor(Math.random() * 2000);
+    function spawn() {
+      const el = document.createElement('span');
+      el.className = 'f-heart';
+      el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+      el.style.left = Math.random() * 100 + '%';
+      el.style.fontSize = (Math.random() * 14 + 12) + 'px';
+      el.style.animationDuration = (Math.random() * 6 + 8) + 's';
+      container.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+    setInterval(spawn, interval);
+  })();
+
+  /* ===========================
+     爱心点击连击
+     =========================== */
+  (function initHeartCombo() {
+    const heart = document.getElementById('main-heart');
+    let combo = 0, timer = null;
+    heart.addEventListener('click', () => {
+      combo++;
+      // 弹出 +1 小爱心
+      const pop = document.createElement('span');
+      pop.textContent = combo >= 10 ? '💖x' + combo : '+' + combo;
+      pop.style.cssText = `position:absolute;color:var(--c1);font-size:${14 + Math.min(combo,20)}px;font-weight:600;
+        pointer-events:none;animation:popUp 0.8s ease-out forwards;
+        left:50%;transform:translateX(-50%);top:-20px;z-index:5;`;
+      heart.parentElement.appendChild(pop);
+      pop.addEventListener('animationend', () => pop.remove());
+
+      clearTimeout(timer);
+      timer = setTimeout(() => { combo = 0; }, 1500);
+    });
+
+    const style = document.createElement('style');
+    style.textContent = `@keyframes popUp {
+      0% { opacity:1; transform:translateY(0) scale(1); }
+      100% { opacity:0; transform:translateY(-60px) scale(1.3); }
+    }`;
+    document.head.appendChild(style);
+  })();
+
+  /* ===========================
+     爱情抽签
+     =========================== */
+  (function initFortune() {
+    const overlay = document.getElementById('fortune-overlay');
+    const content = document.getElementById('fortune-content');
+    const tag = document.getElementById('fortune-tag');
+    let lastIdx = -1;
+
+    document.getElementById('btn-fortune').addEventListener('click', () => {
+      let idx;
+      do { idx = Math.floor(Math.random() * FORTUNES.length); } while (idx === lastIdx);
+      lastIdx = idx;
+      const f = FORTUNES[idx];
+      content.textContent = f.text;
+      tag.textContent = f.tag;
+      overlay.classList.add('show');
+    });
+
+    document.getElementById('fortune-close').addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+  })();
+
+  /* ===========================
+     记忆翻牌游戏
+     =========================== */
+  (function initGame() {
+    const overlay = document.getElementById('game-overlay');
+    const board = document.getElementById('game-board');
+    const movesEl = document.getElementById('game-moves');
+    const winEl = document.getElementById('game-win');
+    const resultEl = document.getElementById('game-result');
+    let cards = [], flipped = [], matched = 0, moves = 0, locked = false;
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function initBoard() {
+      board.innerHTML = '';
+      winEl.classList.remove('show');
+      matched = 0; moves = 0; flipped = []; locked = false;
+      movesEl.textContent = '0';
+      // 随机选8个emoji中的4对
+      const selected = shuffle([...GAME_EMOJIS]).slice(0, 4);
+      cards = shuffle([...selected, ...selected]);
+      cards.forEach((emoji, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'game-card-cell';
+        cell.dataset.index = i;
+        cell.innerHTML = `<div class="game-card-inner">
+          <div class="game-card-front">?</div>
+          <div class="game-card-back">${emoji}</div>
+        </div>`;
+        cell.addEventListener('click', () => flipCard(cell, i));
+        board.appendChild(cell);
+      });
+    }
+
+    function flipCard(cell, idx) {
+      if (locked || cell.classList.contains('flipped') || cell.classList.contains('matched')) return;
+      cell.classList.add('flipped');
+      flipped.push({ cell, idx });
+
+      if (flipped.length === 2) {
+        moves++; movesEl.textContent = moves;
+        locked = true;
+        const [a, b] = flipped;
+        if (cards[a.idx] === cards[b.idx]) {
+          a.cell.classList.add('matched');
+          b.cell.classList.add('matched');
+          matched += 2;
+          flipped = []; locked = false;
+          if (matched === cards.length) {
+            setTimeout(() => {
+              winEl.classList.add('show');
+              resultEl.textContent = `用了 ${moves} 步完成配对`;
+            }, 500);
+          }
+        } else {
+          setTimeout(() => {
+            a.cell.classList.remove('flipped');
+            b.cell.classList.remove('flipped');
+            flipped = []; locked = false;
+          }, 700);
+        }
+      }
+    }
+
+    document.getElementById('btn-game').addEventListener('click', () => {
+      initBoard();
+      overlay.classList.add('show');
+    });
+    document.getElementById('game-close').addEventListener('click', () => overlay.classList.remove('show'));
+  })();
+
+  /* ===========================
+     漂流瓶（localStorage）
+     =========================== */
+  (function initBottle() {
+    const overlay = document.getElementById('bottle-overlay');
+    const input = document.getElementById('bottle-input');
+    const history = document.getElementById('bottle-history');
+    const STORAGE_KEY = 'love_bottle_msgs';
+
+    function getMsgs() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveMsgs(msgs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs)); }
+
+    document.getElementById('btn-bottle').addEventListener('click', () => {
+      input.value = '';
+      history.classList.remove('show');
+      overlay.classList.add('show');
+    });
+
+    document.getElementById('bottle-send').addEventListener('click', () => {
+      const text = input.value.trim();
+      if (!text) return;
+      const msgs = getMsgs();
+      msgs.push({ text, time: new Date().toLocaleString('zh-CN') });
+      saveMsgs(msgs);
+      input.value = '';
+      // 小动画反馈
+      const btn = document.getElementById('bottle-send');
+      btn.textContent = '已放入瓶中 ✨';
+      setTimeout(() => { btn.textContent = '放入瓶中 🌊'; }, 1500);
+    });
+
+    document.getElementById('bottle-read').addEventListener('click', () => {
+      const msgs = getMsgs();
+      if (msgs.length === 0) {
+        history.innerHTML = '<div class="bottle-msg">还没有漂流瓶呢，先写一个吧~</div>';
+      } else {
+        // 随机捞一个
+        const msg = msgs[Math.floor(Math.random() * msgs.length)];
+        history.innerHTML = `<div class="bottle-msg">${msg.text}<div class="time">${msg.time}</div></div>`;
+      }
+      history.classList.add('show');
+    });
+
+    document.getElementById('bottle-close').addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+  })();
+
+  /* ===========================
+     今天吃什么
+     =========================== */
+  (function initDice() {
+    const overlay = document.getElementById('dice-overlay');
+    const content = document.getElementById('dice-content');
+    const tag = document.getElementById('dice-tag');
+    let spinning = false;
+
+    document.getElementById('btn-dice').addEventListener('click', () => {
+      if (spinning) return;
+      spinning = true;
+      overlay.classList.add('show');
+
+      // 快速轮转效果
+      let count = 0;
+      const total = 15 + Math.floor(Math.random() * 10);
+      const interval = setInterval(() => {
+        const f = FOODS[Math.floor(Math.random() * FOODS.length)];
+        content.textContent = f.emoji;
+        tag.textContent = f.name;
+        count++;
+        if (count >= total) {
+          clearInterval(interval);
+          const final = FOODS[Math.floor(Math.random() * FOODS.length)];
+          content.textContent = final.emoji;
+          tag.textContent = final.name + ' — ' + final.desc;
+          spinning = false;
+        }
+      }, 80 + count * 5);
+    });
+
+    document.getElementById('dice-close').addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('show');
+    });
+  })();
+
+  /* ===========================
+     烟花效果
+     =========================== */
+  (function initFireworks() {
+    const canvas = document.getElementById('firework-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [], animating = false;
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function explode(x, y) {
+      const hue = Math.random() * 60 + 330;
+      const count = 80 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i + Math.random() * 0.2;
+        const speed = Math.random() * 4 + 2;
+        const [r, g, b] = hslToRgb(hue + Math.random() * 40, 80 + Math.random() * 20, 55 + Math.random() * 15);
+        particles.push({
+          x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          alpha: 1, r, g, b, decay: 0.008 + Math.random() * 0.008,
+          size: Math.random() * 2.5 + 1
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.alpha -= p.decay;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${p.alpha})`;
+        ctx.fill();
+      }
+      if (particles.length > 0) {
+        requestAnimationFrame(animate);
+      } else {
+        animating = false;
+        canvas.style.display = 'none';
+      }
+    }
+
+    document.getElementById('firework-btn').addEventListener('click', () => {
+      canvas.style.display = 'block';
+      let count = 0;
+      const iv = setInterval(() => {
+        explode(canvas.width * (0.2 + Math.random() * 0.6), canvas.height * (0.15 + Math.random() * 0.35));
+        if (++count >= 8) clearInterval(iv);
+      }, 350);
+      if (!animating) { animating = true; animate(); }
+    });
+  })();
+
+  /* ===========================
+     彩蛋1：爱心连击雨（连击10次触发）
+     =========================== */
+  (function initEasterEgg1() {
+    const heart = document.getElementById('main-heart');
+    let combo = 0;
+    let triggered = false;
+
+    heart.addEventListener('click', () => {
+      combo++;
+      if (combo >= 10 && !triggered) {
+        triggered = true;
+        triggerHeartRain();
+        setTimeout(() => { triggered = false; combo = 0; }, 5000);
+      }
+    });
+
+    function triggerHeartRain() {
+      // 显示彩蛋提示
+      const tip = document.createElement('div');
+      tip.textContent = '💕 发现彩蛋！爱心雨来啦！';
+      tip.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        background:linear-gradient(135deg,var(--c1),var(--c2));padding:16px 32px;
+        border-radius:30px;font-size:16px;z-index:2000;animation:popIn 0.5s ease-out;`;
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 2000);
+
+      // 爱心雨
+      const container = document.createElement('div');
+      container.id = 'heart-rain';
+      container.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1500;overflow:hidden;`;
+      document.body.appendChild(container);
+
+      const hearts = ['❤️','💕','💗','💖','🩷','♥','💝','💘','❣️','💟'];
+      for (let i = 0; i < 60; i++) {
+        setTimeout(() => {
+          const el = document.createElement('span');
+          el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+          el.style.cssText = `position:absolute;left:${Math.random() * 100}%;top:-50px;
+            font-size:${20 + Math.random() * 30}px;animation:rainFall ${2 + Math.random() * 3}s linear forwards;`;
+          container.appendChild(el);
+          el.addEventListener('animationend', () => el.remove());
+        }, i * 50);
+      }
+
+      setTimeout(() => container.remove(), 6000);
+    }
+
+    // 添加动画样式
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes popIn {
+        0% { opacity:0; transform:translate(-50%,-50%) scale(0.5); }
+        100% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+      }
+      @keyframes rainFall {
+        0% { transform:translateY(0) rotate(0deg); opacity:1; }
+        100% { transform:translateY(110vh) rotate(720deg); opacity:0.3; }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
+
+  /* ===========================
+     彩蛋2：键盘密码（输入 爱/橙/宝/love 都能触发）
+     =========================== */
+  (function initEasterEgg2() {
+    const secretCodes = ['爱', '橙', '宝', 'love', 'iloveyou', '宝贝', '亲爱的'];
+    let inputBuffer = '';
+    let triggered = false;
+
+    function checkAndTrigger() {
+      const matched = secretCodes.some(code => inputBuffer.includes(code.toLowerCase()) || inputBuffer.includes(code));
+      if (matched && !triggered) {
+        triggered = true;
+        triggerSecretLove();
+        setTimeout(() => { triggered = false; }, 10000);
+        inputBuffer = '';
+      }
+    }
+
+    // 英文键盘输入
+    document.addEventListener('keydown', (e) => {
+      if (e.key.length === 1) {
+        inputBuffer += e.key.toLowerCase();
+        if (inputBuffer.length > 30) {
+          inputBuffer = inputBuffer.slice(-30);
+        }
+        checkAndTrigger();
+      }
+    });
+
+    // 中文输入法支持
+    document.addEventListener('compositionend', (e) => {
+      inputBuffer += e.data;
+      if (inputBuffer.length > 30) {
+        inputBuffer = inputBuffer.slice(-30);
+      }
+      checkAndTrigger();
+    });
+
+    // 兼容更多输入方式
+    document.addEventListener('input', (e) => {
+      if (e.data) {
+        inputBuffer += e.data;
+        if (inputBuffer.length > 30) {
+          inputBuffer = inputBuffer.slice(-30);
+        }
+        checkAndTrigger();
+      }
+    });
+
+    function triggerSecretLove() {
+      // 创建全屏告白效果
+      const overlay = document.createElement('div');
+      overlay.id = 'secret-overlay';
+      overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.9);z-index:3000;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;animation:fadeIn 0.5s ease-out;`;
+      overlay.innerHTML = `
+        <div style="font-size:60px;margin-bottom:20px;animation:heartBeat 0.8s infinite;">💕</div>
+        <div style="font-size:28px;font-weight:600;background:linear-gradient(135deg,var(--c1),var(--c2));
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px;">
+          你发现了隐藏彩蛋！
+        </div>
+        <div style="font-size:18px;color:rgba(255,255,255,0.8);text-align:center;line-height:2;max-width:80%;">
+          你是我的心动，是我的唯一<br>
+          每一天爱你多一点<br>
+          💝 永远爱你 💝
+        </div>
+        <div style="margin-top:30px;font-size:13px;color:rgba(255,255,255,0.4);">
+          点击任意位置关闭
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // 添加动画
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes heartBeat {
+          0%,100%{transform:scale(1)}
+          25%{transform:scale(1.1)}
+          50%{transform:scale(1)}
+          75%{transform:scale(1.15)}
+        }
+      `;
+      document.head.appendChild(style);
+
+      // 点击关闭
+      overlay.addEventListener('click', () => {
+        overlay.style.animation = 'fadeIn 0.3s ease-out reverse';
+        setTimeout(() => overlay.remove(), 300);
+      });
+    }
+  })();
+
+  /* ===========================
+     彩蛋3：长按标题触发告白气球
+     =========================== */
+  (function initEasterEgg3() {
+    const title = document.querySelector('.title');
+    let timer = null;
+
+    title.style.userSelect = 'none';
+
+    title.addEventListener('touchstart', () => {
+      timer = setTimeout(() => {
+        triggerBalloons();
+      }, 2000);
+    });
+
+    title.addEventListener('touchend', () => {
+      clearTimeout(timer);
+    });
+
+    title.addEventListener('mousedown', () => {
+      timer = setTimeout(() => {
+        triggerBalloons();
+      }, 2000);
+    });
+
+    title.addEventListener('mouseup', () => {
+      clearTimeout(timer);
+    });
+
+    title.addEventListener('mouseleave', () => {
+      clearTimeout(timer);
+    });
+
+    function triggerBalloons() {
+      const container = document.createElement('div');
+      container.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1500;`;
+      document.body.appendChild(container);
+
+      const balloons = ['🎈','🎈','🎈','💕','💗','🎊','✨','🌟'];
+      const messages = ['我爱你', '想你', '么么哒', '宝贝', '亲爱的'];
+
+      for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          const isBalloon = Math.random() > 0.5;
+          if (isBalloon) {
+            el.textContent = balloons[Math.floor(Math.random() * balloons.length)];
+            el.style.cssText = `position:absolute;left:${Math.random() * 100}%;bottom:-60px;
+              font-size:${40 + Math.random() * 30}px;animation:floatUp ${4 + Math.random() * 3}s ease-out forwards;`;
+          } else {
+            el.textContent = messages[Math.floor(Math.random() * messages.length)];
+            el.style.cssText = `position:absolute;left:${Math.random() * 100}%;bottom:-60px;
+              font-size:${14 + Math.random() * 10}px;color:var(--c1);font-weight:600;
+              animation:floatUp ${3 + Math.random() * 2}s ease-out forwards;`;
+          }
+          container.appendChild(el);
+          el.addEventListener('animationend', () => el.remove());
+        }, i * 100);
+      }
+
+      setTimeout(() => container.remove(), 8000);
+    }
+
+    // 添加动画样式
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes floatUp {
+        0% { transform:translateY(0) scale(1); opacity:1; }
+        100% { transform:translateY(-120vh) scale(0.8); opacity:0; }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
+</script>
+</body>
+</html>
